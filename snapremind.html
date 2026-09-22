@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnapRemind – iQOO Hackathon Demo</title>
+<style>
+:root {
+  --bg: #0D0F1A;
+  --surface: #161926;
+  --card: #1E2235;
+  --border: #2A2F47;
+  --accent: #5B6EF5;
+  --accent2: #A78BFA;
+  --green: #34D399;
+  --red: #F87171;
+  --yellow: #FBBF24;
+  --text: #F0F2FF;
+  --sub: #8B91B5;
+  --r: 18px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #07080F;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+/* ── PHONE SHELL ── */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 52px;
+  border: 2px solid #333;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px #000 inset;
+  flex-shrink: 0;
+}
+.notch {
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 126px; height: 34px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  z-index: 200;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.screen.active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.screen.exit-left {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
+.status {
+  padding: 14px 28px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  margin-top: 36px;
+}
+.status-r { display: flex; gap: 5px; align-items: center; font-size: 11px; }
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 24px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ── BOTTOM NAV ── */
+.bnav {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 0 28px;
+  flex-shrink: 0;
+}
+.ni {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  cursor: pointer; color: var(--sub);
+  font-size: 10px; font-weight: 500;
+  transition: color 0.15s;
+}
+.ni.on { color: var(--accent); }
+.ni svg { width: 22px; height: 22px; }
+
+/* ── BUTTONS ── */
+.btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none; border-radius: 16px;
+  padding: 17px; font-size: 16px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(91,110,245,0.35);
+  transition: transform 0.1s, opacity 0.1s;
+}
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── FAB ── */
+.fab {
+  position: absolute;
+  bottom: 88px; right: 20px;
+  width: 58px; height: 58px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 24px rgba(91,110,245,0.5);
+  cursor: pointer; font-size: 24px; border: none; color: white;
+  transition: transform 0.12s, box-shadow 0.3s;
+  user-select: none;
+  z-index: 10;
+}
+.fab.pressing {
+  transform: scale(0.88);
+  box-shadow: 0 0 0 8px rgba(91,110,245,0.2), 0 6px 24px rgba(91,110,245,0.5);
+  animation: fabpulse 0.8s ease-out forwards;
+}
+@keyframes fabpulse {
+  0% { box-shadow: 0 0 0 0 rgba(91,110,245,0.5); }
+  100% { box-shadow: 0 0 0 20px rgba(91,110,245,0); }
+}
+
+/* ── ONBOARDING ── */
+#s-onboard {
+  background: linear-gradient(160deg, #0D0F1A 0%, #12102A 100%);
+  justify-content: center; align-items: center;
+  padding: 40px 32px; gap: 0;
+}
+.ob-logo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 22px; display: flex; align-items: center;
+  justify-content: center; font-size: 32px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 32px rgba(91,110,245,0.4);
+}
+.ob-title { font-size: 34px; font-weight: 800; color: var(--text); text-align: center; line-height: 1.1; margin-bottom: 12px; }
+.ob-sub { font-size: 15px; color: var(--sub); text-align: center; line-height: 1.6; margin-bottom: 40px; }
+.feat-row { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 40px; }
+.feat {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border-radius: 14px;
+  padding: 14px 16px; border: 1px solid var(--border);
+}
+.feat-icon {
+  font-size: 20px; width: 40px; height: 40px;
+  background: rgba(91,110,245,0.12); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.feat-text strong { display: block; font-size: 14px; color: var(--text); font-weight: 600; }
+.feat-text span { font-size: 12px; color: var(--sub); }
+
+/* ── HOME ── */
+.greet-row { display: flex; justify-content: space-between; align-items: center; margin: 18px 0 20px; }
+.greet strong { display: block; font-size: 22px; color: var(--text); font-weight: 700; }
+.greet span { font-size: 13px; color: var(--sub); }
+.avatar {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.stat-n { font-size: 28px; font-weight: 800; color: var(--text); }
+.stat-n span { font-size: 14px; font-weight: 400; color: var(--sub); margin-left: 4px; }
+.stat-l { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-top: 6px; }
+.bg { background: rgba(52,211,153,0.15); color: var(--green); }
+.by { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.br { background: rgba(248,113,113,0.15); color: var(--red); }
+.ba { background: rgba(91,110,245,0.15); color: var(--accent); }
+
+.sec-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.sec-hdr h3 { font-size: 16px; font-weight: 700; color: var(--text); }
+.sec-hdr a { font-size: 13px; color: var(--accent); cursor: pointer; }
+
+.snap-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+  cursor: pointer; display: flex; gap: 12px; align-items: flex-start;
+  transition: transform 0.12s;
+}
+.snap-card:active { transform: scale(0.98); }
+.snap-thumb {
+  width: 52px; height: 52px; border-radius: 10px;
+  flex-shrink: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 22px;
+}
+.snap-info { flex: 1; min-width: 0; }
+.snap-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.snap-meta { font-size: 12px; color: var(--sub); }
+
+/* ── PIP HINT ── */
+.pip-hint {
+  background: rgba(91,110,245,0.08);
+  border: 1px dashed rgba(91,110,245,0.3);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--sub);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.pip-hint strong { color: var(--accent); }
+
+/* ── CAPTURE SCREEN ── */
+.top-bar {
+  padding: 14px 20px 0;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.back { cursor: pointer; color: var(--accent); font-size: 22px; line-height: 1; }
+.top-bar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+
+.snap-area {
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: 20px;
+  margin: 16px 0 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.snap-area.has-content { border-color: var(--accent); border-style: solid; }
+
+.snap-presets {
+  padding: 12px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.preset {
+  background: rgba(91,110,245,0.1);
+  border: 1px solid rgba(91,110,245,0.25);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.preset:hover { background: rgba(91,110,245,0.2); }
+
+.snap-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+  resize: none;
+  padding: 12px 14px;
+  font-family: inherit;
+  min-height: 100px;
+}
+.snap-textarea::placeholder { color: var(--sub); }
+
+.ai-bar {
+  background: rgba(91,110,245,0.1);
+  border-top: 1px solid rgba(91,110,245,0.2);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.ai-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+.ai-dot.pulse { animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
+.ai-label { font-size: 12px; color: var(--accent); font-weight: 600; }
+
+/* ── EXTRACTED ── */
+.ext-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.ext-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.ext-item label { font-size: 10px; color: var(--sub); letter-spacing: 0.06em; display: block; margin-bottom: 4px; }
+.ext-item p { font-size: 13px; color: var(--text); font-weight: 600; }
+.ext-item p.typing::after { content: '|'; animation: blink 0.7s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.chip {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 8px 14px;
+  font-size: 13px; color: var(--text); cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 500; transition: all 0.12s;
+}
+.chip.on { background: rgba(91,110,245,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ── AI LOADING ── */
+.ai-loading {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 20px; gap: 16px;
+}
+.ai-spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-loading-text { font-size: 14px; color: var(--sub); text-align: center; }
+.ai-loading-text strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+
+/* ── CONFIRM ── */
+.confirm-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 20px; margin-bottom: 20px;
+}
+.confirm-type { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; margin-bottom: 8px; }
+.confirm-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px; line-height: 1.3; }
+.confirm-rows { display: flex; flex-direction: column; gap: 10px; }
+.confirm-row { display: flex; justify-content: space-between; font-size: 13px; }
+.confirm-row span:first-child { color: var(--sub); }
+.confirm-row span:last-child { color: var(--text); font-weight: 600; text-align: right; max-width: 55%; }
+
+.actions-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.action-item { display: flex; align-items: center; gap: 12px; }
+.action-check {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  background: rgba(52,211,153,0.15); color: var(--green);
+}
+.action-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.action-val { font-size: 12px; color: var(--sub); }
+
+/* ── SUCCESS ── */
+.success-toast {
+  background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.3);
+  border-radius: 16px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14px; font-weight: 700; color: var(--green);
+}
+
+/* ── REMINDERS ── */
+.filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+.ftab {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 12px; color: var(--sub); cursor: pointer;
+  white-space: nowrap; font-weight: 500;
+}
+.ftab.on { background: rgba(91,110,245,0.15); border-color: var(--accent); color: var(--accent); }
+
+.rem-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+  cursor: pointer;
+}
+.rem-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.rem-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.rem-meta { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.countdown { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; }
+.cu { background: rgba(248,113,113,0.15); color: var(--red); }
+.cs { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.co { background: rgba(52,211,153,0.15); color: var(--green); }
+.rem-src { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--sub); }
+.src-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── PAGE TITLE ── */
+.page-title { font-size: 28px; font-weight: 700; color: var(--text); margin: 20px 0 4px; }
+.page-sub { font-size: 14px; color: var(--sub); margin-bottom: 18px; }
+
+/* ── SCREEN LABEL ── */
+.label-row { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.lbl {
+  cursor: pointer;
+  background: #161926; border: 1px solid #2A2F47;
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 11px; color: #8B91B5;
+  transition: border-color 0.15s;
+}
+.lbl:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── ERROR ── */
+.err-box {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  border-radius: 12px; padding: 12px 14px;
+  font-size: 12px; color: var(--red);
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- ═══ ONBOARDING ═══ -->
+  <div class="screen active" id="s-onboard">
+    <div class="ob-logo">📸</div>
+    <div class="ob-title">SnapRemind</div>
+    <div class="ob-sub">Snap any deadline, event or opportunity — AI reads it and reminds you automatically.</div>
+    <div class="feat-row">
+      <div class="feat">
+        <div class="feat-icon">🤖</div>
+        <div class="feat-text"><strong>AI Extraction</strong><span>Reads dates & deadlines from any screenshot</span></div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">📅</div>
+        <div class="feat-text"><strong>Auto Calendar</strong><span>Adds events & sets smart reminders</span></div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-text"><strong>Long-press PiP</strong><span>Floating button — snap from anywhere</span></div>
+      </div>
+    </div>
+    <button class="btn" onclick="goTo('s-home')">Get Started →</button>
+  </div>
+
+  <!-- ═══ HOME ═══ -->
+  <div class="screen" id="s-home">
+    <div class="status"><span>9:41</span><div class="status-r"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="scroll">
+      <div class="greet-row">
+        <div class="greet"><strong>Good morning 👋</strong><span>3 reminders active</span></div>
+        <div class="avatar">🧑</div>
+      </div>
+      <div class="pip-hint">💡 <strong>Long-press the + button</strong> below to snap any deadline from anywhere</div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-n">12<span>snaps</span></div>
+          <div class="stat-l">Captured this week</div>
+          <span class="badge bg">↑ 3 new</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-n">3<span>due</span></div>
+          <div class="stat-l">Reminders soon</div>
+          <span class="badge by">1 urgent</span>
+        </div>
+      </div>
+      <div class="sec-hdr"><h3>Recent Snaps</h3><a onclick="goTo('s-reminders')">See all</a></div>
+      <div class="snap-card" onclick="goTo('s-capture')">
+        <div class="snap-thumb" style="background:rgba(248,113,113,0.12)">📧</div>
+        <div class="snap-info">
+          <div class="snap-title">iQOO Hackathon – SnapRemind</div>
+          <div class="snap-meta">Submission deadline · Oct 5, 2026</div>
+          <span class="badge br" style="margin-top:6px;display:inline-block">3 days left</span>
+        </div>
+      </div>
+      <div class="snap-card" onclick="goTo('s-capture')">
+        <div class="snap-thumb" style="background:rgba(91,110,245,0.12)">💼</div>
+        <div class="snap-info">
+          <div class="snap-title">Google SWE Internship</div>
+          <div class="snap-meta">Apply before · Nov 1, 2026</div>
+          <span class="badge ba" style="margin-top:6px;display:inline-block">30 days left</span>
+        </div>
+      </div>
+      <div class="snap-card" onclick="goTo('s-capture')">
+        <div class="snap-thumb" style="background:rgba(52,211,153,0.12)">🎓</div>
+        <div class="snap-info">
+          <div class="snap-title">Semester Fee Payment</div>
+          <div class="snap-meta">Last date · Sep 30, 2026</div>
+          <span class="badge by" style="margin-top:6px;display:inline-block">8 days left</span>
+        </div>
+      </div>
+    </div>
+    <button class="fab" id="homeFab" onmousedown="startLongPress()" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress()" ontouchend="cancelLongPress()">📸</button>
+    <nav class="bnav">
+      <div class="ni on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></div>
+      <div class="ni" onclick="goTo('s-capture')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><span>Snap</span></div>
+      <div class="ni" onclick="goTo('s-reminders')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Reminders</span></div>
+      <div class="ni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg><span>Profile</span></div>
+    </nav>
+  </div>
+
+  <!-- ═══ CAPTURE / SNAP ═══ -->
+  <div class="screen" id="s-capture">
+    <div class="status"><span>9:41</span><div class="status-r"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="top-bar">
+      <span class="back" onclick="goTo('s-home')">‹</span>
+      <span class="top-bar-title">New Snap</span>
+    </div>
+    <div class="scroll" style="padding-top:8px">
+      <div style="font-size:13px;color:var(--sub);margin-bottom:8px;">Paste your screenshot text or pick a preset:</div>
+      <div class="snap-presets">
+        <div class="preset" onclick="loadPreset('hackathon')">🏆 iQOO Hackathon</div>
+        <div class="preset" onclick="loadPreset('internship')">💼 Google Internship</div>
+        <div class="preset" onclick="loadPreset('fee')">🎓 Semester Fee</div>
+        <div class="preset" onclick="loadPreset('exam')">📝 Exam Notice</div>
+      </div>
+      <div class="snap-area" id="snapArea">
+        <textarea class="snap-textarea" id="snapText" rows="6" placeholder="Paste screenshot text here…&#10;&#10;e.g. 'Submit your project by Oct 5, 2026 at hackathon.iqoo.in/submit'"></textarea>
+        <div class="ai-bar" id="aiBar" style="display:none">
+          <div class="ai-dot pulse" id="aiDot"></div>
+          <div class="ai-label" id="aiLabel">AI analyzing…</div>
+        </div>
+      </div>
+      <div id="errBox" class="err-box" style="display:none"></div>
+      <div id="extractedSection" style="display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:0.07em;margin-bottom:10px;">✨ AI EXTRACTED</div>
+        <div class="ext-grid">
+          <div class="ext-item"><label>Type</label><p id="ex-type">—</p></div>
+          <div class="ext-item"><label>Date</label><p id="ex-date">—</p></div>
+          <div class="ext-item"><label>Event</label><p id="ex-event">—</p></div>
+          <div class="ext-item"><label>Priority</label><p id="ex-priority">—</p></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:0.07em;margin-bottom:10px;">Quick Actions</div>
+        <div class="chips">
+          <div class="chip on" id="c1" onclick="this.classList.toggle('on')">📅 Calendar</div>
+          <div class="chip on" id="c2" onclick="this.classList.toggle('on')">🔔 Reminder</div>
+          <div class="chip" id="c3" onclick="this.classList.toggle('on')">🔗 Save Link</div>
+          <div class="chip" id="c4" onclick="this.classList.toggle('on')">📤 Share</div>
+        </div>
+        <button class="btn" onclick="goToConfirm()">Save Snap →</button>
+      </div>
+      <div id="analyzeBtn" style="display:none">
+        <button class="btn" id="analyzeBtnEl" onclick="analyzeSnap()">🤖 Analyze with AI</button>
+      </div>
+    </div>
+    <nav class="bnav">
+      <div class="ni" onclick="goTo('s-home')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></div>
+      <div class="ni on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><span>Snap</span></div>
+      <div class="ni" onclick="goTo('s-reminders')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Reminders</span></div>
+      <div class="ni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg><span>Profile</span></div>
+    </nav>
+  </div>
+
+  <!-- ═══ CONFIRM ═══ -->
+  <div class="screen" id="s-confirm">
+    <div class="status"><span>9:41</span><div class="status-r"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="top-bar">
+      <span class="back" onclick="goTo('s-capture')">‹</span>
+      <span class="top-bar-title">Confirm & Save</span>
+    </div>
+    <div class="scroll" style="padding-top:8px">
+      <div class="confirm-card">
+        <div class="confirm-type" id="conf-type">📋 DEADLINE</div>
+        <div class="confirm-title" id="conf-title">—</div>
+        <div class="confirm-rows">
+          <div class="confirm-row"><span>Deadline</span><span id="conf-date">—</span></div>
+          <div class="confirm-row"><span>Reminder</span><span id="conf-reminder">2 days before · 9:00 AM</span></div>
+          <div class="confirm-row"><span>Repeat</span><span>Daily until deadline</span></div>
+          <div class="confirm-row"><span>Priority</span><span id="conf-priority">—</span></div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:0.07em;margin-bottom:12px;">ACTIONS TO CREATE</div>
+      <div class="actions-list">
+        <div class="action-item"><div class="action-check">✓</div><div><div class="action-label">Calendar event added</div><div class="action-val" id="conf-cal-val">—</div></div></div>
+        <div class="action-item"><div class="action-check">✓</div><div><div class="action-label">Reminder set</div><div class="action-val">2 days before · 9:00 AM</div></div></div>
+        <div class="action-item"><div class="action-check">✓</div><div><div class="action-label">Snap saved to library</div><div class="action-val">AI-analyzed & tagged</div></div></div>
+      </div>
+      <button class="btn" onclick="goTo('s-saved')">Confirm & Save ✓</button>
+    </div>
+  </div>
+
+  <!-- ═══ SAVED ═══ -->
+  <div class="screen" id="s-saved">
+    <div class="status"><span>9:41</span><div class="status-r"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="scroll" style="padding-top:20px">
+      <div class="greet-row">
+        <div class="greet"><strong>Good morning 👋</strong><span>4 reminders active</span></div>
+        <div class="avatar">🧑</div>
+      </div>
+      <div class="success-toast">
+        <span style="font-size:20px">✅</span>
+        <div><div>SnapRemind saved!</div><div style="font-size:11px;font-weight:400;opacity:0.8;margin-top:2px;">Reminder set · Calendar synced</div></div>
+      </div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-n">13<span>snaps</span></div>
+          <div class="stat-l">Captured this week</div>
+          <span class="badge bg">↑ 4 new</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-n">4<span>due</span></div>
+          <div class="stat-l">Reminders soon</div>
+          <span class="badge by">1 urgent</span>
+        </div>
+      </div>
+      <div class="sec-hdr"><h3>Recent Snaps</h3><a onclick="goTo('s-reminders')">See all</a></div>
+      <div class="snap-card" style="border-color:rgba(52,211,153,0.3)">
+        <div class="snap-thumb" style="background:rgba(52,211,153,0.1)">✅</div>
+        <div class="snap-info">
+          <div class="snap-title" id="saved-title">—</div>
+          <div class="snap-meta" id="saved-meta">Just saved</div>
+          <span class="badge bg" style="margin-top:6px;display:inline-block">Just saved</span>
+        </div>
+      </div>
+      <div class="snap-card" onclick="goTo('s-capture')">
+        <div class="snap-thumb" style="background:rgba(248,113,113,0.12)">📧</div>
+        <div class="snap-info">
+          <div class="snap-title">IIT Hyderabad Hackathon</div>
+          <div class="snap-meta">Submission deadline · Oct 5, 2026</div>
+          <span class="badge br" style="margin-top:6px;display:inline-block">3 days left</span>
+        </div>
+      </div>
+    </div>
+    <button class="fab" onclick="goTo('s-capture')">📸</button>
+    <nav class="bnav">
+      <div class="ni on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></div>
+      <div class="ni" onclick="goTo('s-capture')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><span>Snap</span></div>
+      <div class="ni" onclick="goTo('s-reminders')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Reminders</span></div>
+      <div class="ni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg><span>Profile</span></div>
+    </nav>
+  </div>
+
+  <!-- ═══ REMINDERS ═══ -->
+  <div class="screen" id="s-reminders">
+    <div class="status"><span>9:41</span><div class="status-r"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="scroll" style="padding-top:16px">
+      <div class="page-title">Reminders</div>
+      <div class="page-sub">All your upcoming deadlines</div>
+      <div class="filter-tabs">
+        <div class="ftab on">All</div>
+        <div class="ftab">Deadlines</div>
+        <div class="ftab">Events</div>
+        <div class="ftab">Jobs</div>
+        <div class="ftab">Fees</div>
+      </div>
+      <div id="remList">
+        <div class="rem-item" onclick="goTo('s-confirm')">
+          <div class="rem-hdr">
+            <div><div class="rem-title">iQOO Hackathon – SnapRemind</div><div class="rem-meta">Oct 5, 2026 · 11:59 PM</div></div>
+            <div class="countdown cu">3 days</div>
+          </div>
+          <div class="rem-src"><div class="src-dot" style="background:var(--red)"></div>From screenshot · hackathon.iqoo.in</div>
+        </div>
+        <div class="rem-item">
+          <div class="rem-hdr">
+            <div><div class="rem-title">Semester Fee Payment</div><div class="rem-meta">Sep 30, 2026</div></div>
+            <div class="countdown cs">8 days</div>
+          </div>
+          <div class="rem-src"><div class="src-dot" style="background:var(--yellow)"></div>From screenshot · Portal notification</div>
+        </div>
+        <div class="rem-item">
+          <div class="rem-hdr">
+            <div><div class="rem-title">Google SWE Internship</div><div class="rem-meta">Nov 1, 2026 · Apply online</div></div>
+            <div class="countdown co">30 days</div>
+          </div>
+          <div class="rem-src"><div class="src-dot" style="background:var(--green)"></div>From screenshot · LinkedIn post</div>
+        </div>
+      </div>
+    </div>
+    <nav class="bnav">
+      <div class="ni" onclick="goTo('s-home')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></div>
+      <div class="ni" onclick="goTo('s-capture')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><span>Snap</span></div>
+      <div class="ni on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Reminders</span></div>
+      <div class="ni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg><span>Profile</span></div>
+    </nav>
+  </div>
+
+</div><!-- /phone -->
+
+<!-- Screen jump labels -->
+<div class="label-row">
+  <div class="lbl" onclick="goTo('s-onboard')">Onboarding</div>
+  <div class="lbl" onclick="goTo('s-home')">Home</div>
+  <div class="lbl" onclick="goTo('s-capture')">Snap + AI</div>
+  <div class="lbl" onclick="goTo('s-confirm')">Confirm</div>
+  <div class="lbl" onclick="goTo('s-saved')">Saved ✓</div>
+  <div class="lbl" onclick="goTo('s-reminders')">Reminders</div>
+</div>
+
+<script>
+const GROQ_KEY = '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';
+
+// ── SCREEN NAVIGATION ──
+let current = 's-onboard';
+function goTo(id) {
+  const prev = document.getElementById(current);
+  const next = document.getElementById(id);
+  if (!next || id === current) return;
+  prev.classList.add('exit-left');
+  next.classList.add('active');
+  setTimeout(() => {
+    prev.classList.remove('active', 'exit-left');
+  }, 350);
+  current = id;
+}
+
+// ── LONG PRESS ──
+let lpTimer = null;
+function startLongPress() {
+  const fab = document.getElementById('homeFab');
+  fab.classList.add('pressing');
+  lpTimer = setTimeout(() => {
+    fab.classList.remove('pressing');
+    goTo('s-capture');
+  }, 800);
+}
+function cancelLongPress() {
+  clearTimeout(lpTimer);
+  const fab = document.getElementById('homeFab');
+  fab.classList.remove('pressing');
+}
+
+// ── PRESETS ──
+const presets = {
+  hackathon: `Subject: iQOO Hackathon – Registration Confirmed
+Dear Participant,
+Your project SnapRemind has been registered for the iQOO Gen AI Hackathon.
+IMPORTANT: Final submission deadline is October 5, 2026 at 11:59 PM IST.
+Submit your project at: hackathon.iqoo.in/submit
+Late submissions will not be accepted.`,
+  internship: `Hey! Google is hiring SWE Interns for Summer 2027.
+Apply before November 1, 2026.
+Requirements: 3rd/4th year CS students, strong DSA.
+Apply here: careers.google.com/internships
+This is a high priority opportunity — limited seats!`,
+  fee: `NOTICE: Semester Fee Payment Deadline
+Students must pay their semester fee by September 30, 2026.
+Late fee penalty will apply after this date.
+Pay at: fees.university.ac.in
+Contact accounts office for any queries.`,
+  exam: `Mid-semester examination schedule:
+Data Structures — October 12, 2026, 10:00 AM, Hall B
+Operating Systems — October 14, 2026, 2:00 PM, Hall A
+Report 30 minutes early. Bring your ID card.`
+};
+
+function loadPreset(key) {
+  const ta = document.getElementById('snapText');
+  ta.value = presets[key];
+  document.getElementById('snapArea').classList.add('has-content');
+  document.getElementById('analyzeBtn').style.display = 'block';
+  document.getElementById('extractedSection').style.display = 'none';
+  document.getElementById('errBox').style.display = 'none';
+}
+
+// Listen for manual typing
+document.getElementById('snapText').addEventListener('input', function() {
+  const has = this.value.trim().length > 10;
+  document.getElementById('snapArea').classList.toggle('has-content', has);
+  document.getElementById('analyzeBtn').style.display = has ? 'block' : 'none';
+  document.getElementById('extractedSection').style.display = 'none';
+});
+
+// ── GROQ AI ANALYSIS ──
+let extracted = {};
+async function analyzeSnap() {
+  const text = document.getElementById('snapText').value.trim();
+  if (!text) return;
+
+  // Show loading
+  document.getElementById('aiBar').style.display = 'flex';
+  document.getElementById('aiLabel').textContent = 'AI reading your snap…';
+  document.getElementById('analyzeBtn').style.display = 'none';
+  document.getElementById('extractedSection').style.display = 'none';
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('analyzeBtnEl').disabled = true;
+
+  const labels = ['AI reading your snap…', 'Extracting dates & deadlines…', 'Identifying event type…', 'Setting priority level…'];
+  let li = 0;
+  const labelTimer = setInterval(() => {
+    li = (li + 1) % labels.length;
+    document.getElementById('aiLabel').textContent = labels[li];
+  }, 900);
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI that extracts deadline/event info from screenshot text. 
+Return ONLY valid JSON with these fields:
+{
+  "type": "Deadline|Event|Fee|Exam|Job",
+  "event": "short event name (max 5 words)",
+  "date": "formatted date string e.g. Oct 5, 2026",
+  "priority": "🔴 High|🟡 Medium|🟢 Low",
+  "emoji": "one relevant emoji"
+}
+No explanation, no markdown, just JSON.`
+          },
+          { role: 'user', content: text }
+        ],
+        max_tokens: 150,
+        temperature: 0.1
+      })
+    });
+
+    clearInterval(labelTimer);
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'Groq API error');
+    }
+
+    const data = await res.json();
+    const raw = data.choices[0].message.content.trim();
+    extracted = JSON.parse(raw);
+
+    // Animate typing into fields
+    document.getElementById('aiBar').style.display = 'none';
+    document.getElementById('extractedSection').style.display = 'block';
+    animateField('ex-type', extracted.emoji + ' ' + extracted.type);
+    animateField('ex-date', extracted.date, 80);
+    animateField('ex-event', extracted.event, 40);
+    animateField('ex-priority', extracted.priority, 20);
+
+    // Pre-fill confirm screen
+    document.getElementById('conf-title').textContent = extracted.event;
+    document.getElementById('conf-date').textContent = extracted.date;
+    document.getElementById('conf-priority').textContent = extracted.priority;
+    document.getElementById('conf-type').textContent = (extracted.emoji || '📋') + ' ' + extracted.type.toUpperCase();
+    document.getElementById('conf-cal-val').textContent = extracted.date + ' · ' + extracted.event;
+    document.getElementById('saved-title').textContent = extracted.event;
+    document.getElementById('saved-meta').textContent = extracted.type + ' · ' + extracted.date;
+
+    // Add to reminders list
+    addToReminders(extracted);
+
+  } catch(e) {
+    clearInterval(labelTimer);
+    document.getElementById('aiBar').style.display = 'none';
+    document.getElementById('analyzeBtn').style.display = 'block';
+    document.getElementById('analyzeBtnEl').disabled = false;
+    document.getElementById('errBox').style.display = 'block';
+    document.getElementById('errBox').textContent = '⚠ ' + (e.message || 'Could not analyze. Check your connection.');
+  }
+}
+
+function animateField(id, val, delay = 0) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.classList.add('typing');
+  let i = 0;
+  setTimeout(() => {
+    const t = setInterval(() => {
+      el.textContent = val.slice(0, i + 1);
+      i++;
+      if (i >= val.length) { clearInterval(t); el.classList.remove('typing'); }
+    }, 35);
+  }, delay);
+}
+
+function goToConfirm() {
+  if (!extracted.event) {
+    // fallback if somehow empty
+    extracted = { type: 'Deadline', event: 'Saved Snap', date: 'Check snap', priority: '🟡 Medium', emoji: '📋' };
+  }
+  goTo('s-confirm');
+}
+
+function addToReminders(info) {
+  const list = document.getElementById('remList');
+  const urgency = info.priority?.includes('High') ? 'cu' : info.priority?.includes('Medium') ? 'cs' : 'co';
+  const dot = info.priority?.includes('High') ? 'var(--red)' : info.priority?.includes('Medium') ? 'var(--yellow)' : 'var(--green)';
+  const days = info.priority?.includes('High') ? 'Urgent' : 'Upcoming';
+  const div = document.createElement('div');
+  div.className = 'rem-item';
+  div.innerHTML = `
+    <div class="rem-hdr">
+      <div><div class="rem-title">${info.event}</div><div class="rem-meta">${info.date}</div></div>
+      <div class="countdown ${urgency}">${days}</div>
+    </div>
+    <div class="rem-src"><div class="src-dot" style="background:${dot}"></div>From screenshot · AI analyzed</div>
+  `;
+  list.insertBefore(div, list.firstChild);
+}
+</script>
+</body>
+</html>
